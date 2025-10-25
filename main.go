@@ -8,23 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-
 func main() {
-  
-  r := gin.Default()
+
+	r := gin.Default()
 
 	config.ConnectDatabase()
 
+	config.DB.AutoMigrate(&models.Student{})
 
-  config.DB.AutoMigrate(&models.Student{})
+	routes.Routes(r)
 
-
-  routes.Routes(r)
-	
-
-	
-
-	
 	r.Run(":8080")
 }

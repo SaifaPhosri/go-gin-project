@@ -3,91 +3,110 @@ package handlers
 import (
 	"go-gin-api/config"
 	"go-gin-api/models"
+	"go-gin-api/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
-func CreateStudent(c *gin.Context) {
+type StudentHandler struct {
+	service service.StudentService
+}
+
+func NewStudentHandler(service service.StudentService) *StudentHandler {
+	return &StudentHandler{service: service}
+}
+
+func (h *StudentHandler) CreateStudent(c *gin.Context) {
 	var student models.Student
 	if err := c.ShouldBindJSON(&student); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := config.DB.Create(&student).Error; err != nil {
+	createdStudent, err := h.service.CreateStudent(student)
+	if err != nil {
 		c.JSON(500, gin.H{"err": err.Error()})
 		return
 	}
+
 	c.JSON(200, gin.H{
 		"message": "create student success",
-		"data": student,
+		"data":    createdStudent,
 	})
 }
 
-func GetAllStudent(c *gin.Context) {
-	var student []models.Student
-
-	if err := config.DB.Find(&student).Error; err != nil {
+func (h *StudentHandler) GetAllStudent(c *gin.Context) {
+	students, err := h.service.GetAllStudent()
+	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(200, gin.H{
-		"message":"find all student success",
-		"total": len(student),
-		"data": student,
-
+		"message": "find all student success",
+		"total":   len(students),
+		"data":    students,
 	})
 }
 
-func GetStudentById(c *gin.Context) {
-	id := c.Param("id")
-	var student models.Student
+func (h *StudentHandler) GetStudentById(c *gin.Context) {
+	idParam := c.Param("id")
 
-	if err := config.DB.Find(&student, "id = ?", id ).Error; err != nil {
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(400, gin.H{"err": "invalid UUID"})
+	}
+
+	student, err := h.service.GetStudentById(id)
+	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(200, gin.H{
 		"message": "fine student success",
-		"data": student,
+		"data":    student,
 	})
 }
 
-
-func UpdateStudent(c *gin.Context) {
-	id := c.Param("id")
-	var student models.Student
-
-	if err := config.DB.Find(&student, "id = ?", id).Error; err != nil {
-		c.JSON(500,gin.H{"error": err.Error()})
-		return
+func (h *StudentHandler) UpdateStudent(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(400, gin.H{"err": "invalid UUID"})
 	}
-
 	var input models.Student
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := config.DB.Model(&student).Updates(input).Error; err != nil {
-		c.JSON(500,gin.H{"error": err.Error()})
+	input.ID = id
+
+	student, err := h.service.UpdateStudent(input)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(200,gin.H{
+	c.JSON(200, gin.H{
 		"message": "update student success",
-		"data": student,
+		"data":    student,
 	})
 }
 
-func DeleteStudent(c *gin.Context) {
-	id := c.Param("id")
+func (h *StudentHandler) DeleteStudent(c *gin.Context) {
+	idParam := c.Param("id")
 
-	var student models.Student
+	id, err := uuid.Parse(idParam)
 
-	if err := config.DB.Find(&student, "id = ?", id).Error; err != nil{
+	if err != nil {
+		c.JSON(400, gin.H{"err": "invalid UUID"})
+	}
+
+	student := h.service.DeleteStudent(id)
+	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
@@ -97,5 +116,5 @@ func DeleteStudent(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200,gin.H{"message": "delete student success"})
+	c.JSON(200, gin.H{"message": "delete student success"})
 }
