@@ -45,14 +45,14 @@ func (r *studentRepository) GetStudentById(id uuid.UUID) (models.Student, error)
 }
 
 func (r *studentRepository) UpdateStudent(student models.Student) (models.Student, error) {
-	if err := config.DB.Model(&student).Where("id = ?", student.ID).Updates(student).Error; err != nil {
+	if err := config.DB.Model(&models.Student{}).Where("id = ?", student.ID).Updates(student).Error; err != nil {
 		return student, err
 	}
 	return student, nil
 }
 
 func (r *studentRepository) DeleteStudent(id uuid.UUID) error {
-	if err := config.DB.Delete(&models.Student{}).Error; err != nil {
+	if err := config.DB.Delete(&models.Student{}, "id = ?", id).Error; err != nil {
 		return err
 	}
 	return nil

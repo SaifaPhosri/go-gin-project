@@ -45,7 +45,12 @@ func (s *studentService) GetStudentById(id uuid.UUID) (models.Student, error) {
 }
 
 func (s *studentService) UpdateStudent(student models.Student) (models.Student, error) {
-	return s.repo.UpdateStudent(student)
+	existing, err := s.repo.GetStudentById(student.ID)
+	if err != nil {
+		return models.Student{}, errors.New("student not found")
+	}
+
+	return s.repo.UpdateStudent(existing)
 }
 
 func (s *studentService) DeleteStudent(id uuid.UUID) error {
